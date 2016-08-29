@@ -9,7 +9,7 @@ myself to read later. I'm trying to explain the concept of Interval tree as
 simple as I could, based on what I researched about it. So, you could find tons
 of bugs inside. Please report / discuss with me to make it better.
 
-#### Let's get started
+### Let's get started
 Before we jump suddenly into the definition. Let's just start with this simple
 problem that all developers solved at the beginning their entire carrers: find
 the maxximum element of an array. For example and result:
@@ -45,7 +45,7 @@ all the maximum values. That's a good solution. With some dynamic programming
 technique, it becomes `O(n^2)`. But it doesn't work if we
 increase the number of `n` to about `100_000`. Before you found a good solution for this. Let's make it more difficult :D
 
-#### Ultimate problem
+### Ultimate problem
 Given an array `A` with `n` elements and `m` set of number (`n <= 100_000`, `m <= 1_000_000`). Each set of number has two format:
 * `0 i j`: print out the maximum elements with index from `i` to `j`
 * `1 i j k`: set all elements with index from `i` to `j` to the value `k`
@@ -89,7 +89,7 @@ Split the entire array into two ranges, each range is splitted into smaller
 ranges and so on. Oh wait. Isn't that the concept of **binary tree**? Yup. We
 can solve the problem by setting up a special type of binary tree. Each node will manage a range `i..j`. In this context, it is reasonal to choose let two child ranges equal. So, left node manages `i..(i + j) / 2` and right node manages `(i + j) / 2 + 1 .. j`. This new kind of tree is called **Interval Tree** (usually ambiguous with its coursin **Segment Tree**, I'll discuss about this later). Obviously, the way array is splited into half leads to the fact that Interval Tree is a **balanced binary tree**.
 
-#### A little more abstraction (draft)
+### A little more abstraction (draft)
 * People when working in the real life realize that there exists some problems
   which could be categorized into the same class of this problem. For example:
   instead of finding min or max, we need to find the sum of a range in an array;
@@ -107,7 +107,7 @@ can solve the problem by setting up a special type of binary tree. Each node wil
 
 * Interval tree was born to solve this kind of problems efficiently.
 
-#### Problem solved (draft)
+### Problem solved (draft)
 * Kindly solve the problem with interval tree. Draw a lot of sketches to support
   the idea
 * Raise the problem with updating operations: it still update all the elements
@@ -118,17 +118,21 @@ can solve the problem by setting up a special type of binary tree. Each node wil
   value, no need to gather deeper children. If need its deeper query, update
   that cached node and its children.
 * If possible, post some gifs here to illustrate the whole solution
-#### Another problems (draft)
+
+### Another problems (draft)
 * From abstraction part, raise problems with counting (LITES on SPOJ) and describe the solution
 * Real life example with calculate reactangle area problem (available on SPOJ)
-#### 2D Interval Tree (draft)
+
+### 2D Interval Tree (draft)
 * Devide and conquer classic problem => Lead to 2D Interval Tree which has 4
   children and manage a 2D Reactangle instead of a range.
-#### Implement Interval Tree with Ruby (draft)
+
+### Implement Interval Tree with Ruby (draft)
 * Something need to be mentioned about implementation
 * Interval tree is balanced binary tree. So we can use an array to store instead
   of real referenced structure. Just like heap
-#### Interval Tree vs Segment Tree (draft)
+
+### Interval Tree vs Segment Tree (draft)
 * Segment Tree is the basic version of Interval Tree. Mainly used to count
   things.
 
