@@ -1,3 +1,5 @@
+# Introduction to Interval Tree
+
 In this post, I'll show you some introduction to an advanged data structure
 called Interval Tree. Note that the word `advanged` here means that this data
 structure is used to solve a too specific kind of computer science problems. It
@@ -89,23 +91,19 @@ Split the entire array into two ranges, each range is splitted into smaller
 ranges and so on. Oh wait. Isn't that the concept of **binary tree**? Yup. We
 can solve the problem by setting up a special type of binary tree. Each node will manage a range `i..j`. In this context, it is reasonal to choose let two child ranges equal. So, left node manages `i..(i + j) / 2` and right node manages `(i + j) / 2 + 1 .. j`. This new kind of tree is called **Interval Tree** (usually ambiguous with its coursin **Segment Tree**, I'll discuss about this later). Obviously, the way array is splited into half leads to the fact that Interval Tree is a **balanced binary tree**.
 
-### A little more abstraction (draft)
-* People when working in the real life realize that there exists some problems
-  which could be categorized into the same class of this problem. For example:
-  instead of finding min or max, we need to find the sum of a range in an array;
-  or we need to find out how many elements in a range which are bigger than a
-  number, etc.
-* Step back a little while and think of the similarities of mentioned problems,
-  we can easily conduct some abstract natures for the union set of problem:
-  * Initially given some array A with pre-defined values for each element
-  * We could process two types of operation on the given array: query and update
-    operations.
-  * The query operation usually require us to find the final processing result
-    (usually count, sum, multiply ...) from all the elements satisfying
-    condition K (optinal) in a range i..j of the array A.
-  * The update operation usually require us to update all elements in range i..j of the array A, usually set value, increase, decrease etc.
+### A little more abstraction
+In fact, when working with pure computer science problems, people realize there are many ones which could be categorized into the same class of this problem. For example: instead of finding min or max, we need to find the sum of a range in an array; or we need to find out how many elements in a range which are bigger than a number, etc.
+Step back a little while and think of the similarities of mentioned problems, we can easily conduct some abstract natures for the union set of problem:
+* Initially given some array A with pre-defined values for each element
+* We could process two types of operation on the given array: query and update operations.
+* The update operation usually require us to update all elements in range i..j of the array A, usually set value, increase, decrease etc.
+* The query operation usually require us to find the final processing result (usually count, sum, multiply ...) from all the elements satisfying condition K (optinal) in a range i..j of the array A.
 
-* Interval tree was born to solve this kind of problems efficiently.
+Interval tree was born to solve this kind of problems efficiently. Although each
+problem could have better exclusive optimised solution, the Interval Tree is
+more abstract, reuseable and doesn't require further research time. Subsequently,
+if you don't need a specially strict solution for those problems, I think interval
+tree is great enough for most of the cases.
 
 ### Problem solved (draft)
 * Kindly solve the problem with interval tree. Draw a lot of sketches to support
@@ -118,6 +116,7 @@ can solve the problem by setting up a special type of binary tree. Each node wil
   value, no need to gather deeper children. If need its deeper query, update
   that cached node and its children.
 * If possible, post some gifs here to illustrate the whole solution
+* Benchmark and compare two algorithm
 
 ### Another problems (draft)
 * From abstraction part, raise problems with counting (LITES on SPOJ) and describe the solution
