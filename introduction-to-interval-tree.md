@@ -107,27 +107,27 @@ Each node of an Interval Tree must have 0 children node (leaf node) or 2 childre
 #### Query operation
 To solve the query operation, for example: `Max(A, 3, 5)`, we follow the basic idea: starting with the root, if the node range match 100% with the query range, return the range max as the querying result, otherwise, continue to browse left and right node and return maximum values between left and right querying result. Go back to our current example, we illustrate it by the following figure. The red line is the query result we want to find. It starts at the beginning of the query range and ends at corresponding one.
 
-~[Interval Tree Query Operation](./introduction-to-interval-tree/tree-query1.jpg)
+![Interval Tree Query Operation](./introduction-to-interval-tree/tree-query1.jpg)
 
 At the root node, we only have the information of the range max from index 0 to 9. The query result `Q` we want to query is index 3 to 5. We could not conduct a right result from this information. Applying above idea, we need to find the query result `Q1` upon the left node and `Q2` upon the right node. Then, `Q = Max(Q1, Q2)`. Since the left node manage the range from 0 to 4, we only need to find `Q1` from 3 to 4. Similarly, we only need to find `Q2` from range index 5 to 5 upon the right node.
 
-~[Interval Tree Query Operation](./introduction-to-interval-tree/tree-query2.jpg)
+![Interval Tree Query Operation](./introduction-to-interval-tree/tree-query2.jpg)
 
 After spliting, we approach the result, but we are still not there yet. Continue spliting the range of `Q1` into `Q3` and `Q4`, and the range of `Q2` into `Q5` and `Q6`. The final result will be `Q = Max( Max(Q3, Q4), Max(Q5, Q6) )`.
 
-~[Interval Tree Query Operation](./introduction-to-interval-tree/tree-query3.jpg)
+![Interval Tree Query Operation](./introduction-to-interval-tree/tree-query3.jpg)
 
 Oh wait a minute! Some thing is wrong with `Q3`. The node contains `Q3` manages the range from index 0 to 3, while `Q1` is the result from ... index `3` to index `2`. Hm... I got it. The `Q1` is 100% belongs to the left child node of the node it belongs. So, we don't need to browse the right child node. The sam fact happens with `Q6`. Subsequently, `Q3` and `Q6` is redundant. Let's rename and change the fomula a little bit: `Q = Max( Max(Q3), Max(Q4) ) = Max(Q3, Q4)`
 
-~[Interval Tree Query Operation](./introduction-to-interval-tree/tree-query4.jpg)
+![Interval Tree Query Operation](./introduction-to-interval-tree/tree-query4.jpg)
 
 Finally, we got a 100% match. The `Q3` match 100% with its node. So, `Q3` is equal to the range max of its node. In this case, `Q3 = 6`, and `Q1 = Q3 = 6` too. We stop browsing `Q3`'s children nodes from now. In the oposite, `Q4` is still a mysterious, keep spliting deeper until we reach the 100% match, we got the full query tree. Obviously, `Q6 = 2`, `Q5 = 2`, `Q4 = 2` and `Q2 = 2`. Subsequently, `Q = Max(Q1, Q2) = Max(6, 2) = 6`. The full query operator is describe below:
 
-~[Interval Tree Query Operation](./introduction-to-interval-tree/tree-query5.jpg)
+![Interval Tree Query Operation](./introduction-to-interval-tree/tree-query5.jpg)
 
 You must be thinking that what the hell, the traditional loop cost only 3 steps. While this algorithm cost nearly at least 7 steps. Yeah, you are right. In micro queries, interval tree is slow comparing to traditional way. Usually, people overcome this weakness by applying traditional searching for micro queries (such as queries with the range under 10 for example) and apply interval-tree-way query for larger queries. If you try another example: `Max(0, 7)`, the interval tree is remarkable faster than traditional way:
 
-~[Interval Tree Query Operation](./introduction-to-interval-tree/tree-query6.jpg)
+![Interval Tree Query Operation](./introduction-to-interval-tree/tree-query6.jpg)
 
 Yup, 4 steps vs 8 steps. Interval Tree wins! The bigger the data is, the more the Interval Tree saves you. After the example, we can easily implement the query operation with following persuade code. To make our code simpler, instead of checking redundant browsing path, we check the out of range condition and return negative infinity if vilolated. It won't affect the result of `Max` operation.
 
