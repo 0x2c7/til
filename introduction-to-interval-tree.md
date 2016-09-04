@@ -136,12 +136,11 @@ Yup, 4 steps vs 8 steps. Interval Tree wins! The bigger the data is, the more th
 
 ```ruby
 def query(current_node, query_range)
-  if query_range.last < current_node.range.first || query_range.first >
-  current_node.last
+  if out_of_range(query_range, current_node.range)
     return -INFINITY
   end
   if query_range == current_node.range
-    return current_node.range_maxx
+    return current_node.range_max
   end
   max_left = query(
     current_node.left,
@@ -152,6 +151,10 @@ def query(current_node, query_range)
     current_node.right.range.first..query_range.last
   )
   return [max_left, max_right].max
+end
+
+def out_of_range(query_range, node_range)
+  query_range.last < node_range.first || query_range.first > node_range.last
 end
 ```
 
@@ -174,12 +177,58 @@ Max(A, 3, 9)
 ![Interval Tree Update Operation](./introduction-to-interval-tree/tree-update2.jpg)
 
 Wow, it is so complicated, especially the update operators. It costs half of all while there are only 2 operators! Research the tree, you will find something really interesting. Look at this section of the tree:
-
 ![Interval Tree Update Operation](./introduction-to-interval-tree/tree-update3.jpg)
 
-There are 4 query operators and 2 update operators reaching the range `[3, 6]`. There are only two update operators reaching its child nodes. Is it a waste when we update its both left node and child node? The final result of the problem is to print out all the query operators' results. The update operators, in oposite, don't require any evidences to show that the array is updated. So, if the query operators only care about the range `[3, 6]`, not its children node, we could have a shortcut so that we both ensure the query results and save the update cost as much as we could by not updating non-query nodes. Go back to the example, the range `[3, 6]` is updated to value `10`. Two query operators match the range and return the query results. That range is updated to value `1`. Again, two query operators get the query results by 100% match. We come up with an idea: when updating, if the update range match 100% with the node range, cache that update value without browsing the children nodes, otherwise, continue browsing left and right child node of that node. To match with that idea, the query idea must be audited: starting with the root, if the node range match 100% with the query range, return the range max as the querying result, otherwise, migrate the current node's cache to its children, clear currnt node cache and continue to browse left and right node and return maximum values between left and right querying result. Hm.. It becomes more complicated now. Let's make it easier by return to our example.
 
+There are 4 query operators and 2 update operators reaching the range `[3, 6]`. There are only two update operators reaching its child nodes. Is it a waste when we update its both left node and child node? The final result of the problem is to print out all the query operators' results. The update operators, in oposite, don't require any evidences to show that the array is updated. So, if the query operators only care about the range `[3, 6]`, not its children node, we could have a shortcut so that we both ensure the query results and save the update cost as much as we could by not updating non-query nodes. Go back to the example, the range `[3, 6]` is updated to value `10`. Two query operators match the range and return the query results. That range is updated to value `1`. Again, two query operators get the query results by 100% match. We come up with an idea: when updating, if the update range match 100% with the node range, cache that update value without browsing the children nodes, otherwise, continue browsing left and right child node of that node; in the recursive tree, update the range max of each node. To match with that idea, the query idea must be audited: starting with the root, if the node range match 100% with the query range, return the range max as the querying result, otherwise, migrate the current node's cache to its children, clear currnt node cache and continue to browse left and right node and return maximum values between left and right querying result. Hm.. It becomes more complicated now. The node of the tree is expanded with an extra attribute (pink rectangle in the figures). By default, the cache attribute is null. Let's make it easier by returning to our example:
 
+![Interval Tree full](./introduction-to-interval-tree/tree-full.jpg)
+
+With update operator `Update(A, 3, 4, 10)`, we browse until we reach range `[3, 6]`, then update the range max and the cache of that node. That's it. We don't even need to update the array.
+
+![Interval Tree full](./introduction-to-interval-tree/tree-update-full1.jpg)
+
+With query operator `Max(A, 1, 4)` and `Max(A, 3, 9)`, we process like above normal way, nothing changes. Query operator `Update(A, 2, 6, 1)` is the same. The next two query operators have nothing special too.
+
+![Interval Tree full](./introduction-to-interval-tree/tree-update-full2.jpg)
+
+Let's add another example: `Update(A, 0, 7, 4); Max(A, 3, 9)`. The `Update(A, 0, 7, 4)` is processed just like above, nothing special.
+
+![Interval Tree full](./introduction-to-interval-tree/tree-update-full3.jpg)
+
+When process query operator `Max(A, 3, 9)`, something fun happens. Following the traditional way, we soon reach the following situation. This situation is described above that the query range is inside the node range and the node has an update cache.
+
+![Interval Tree full](./introduction-to-interval-tree/tree-update-full4.jpg)
+
+The update cache is now useless because we want the inside result. So, we clear this cache and update all the elements inside. However, because update action is costly and we are not sure we need all the elements between this range, we choose a smarter approach. Look at that node, we are sure that all the elements inside the range in the left node and the right node have the same value with the cache. Subsequently, we create the cache for both left node and right node. The value of those caches are the same as the value of the cache in parent node. This action is temperarily called cache migration. After this action, we continue the querying operator.
+
+![Interval Tree full](./introduction-to-interval-tree/tree-update-full5.jpg)
+
+Soon, we get the query result, which is `4`. This is the whole update query process we need :) This process could be described by the following persuade code:
+
+```ruby
+def update(current_node, update_range, value)
+  return if out_of_range(current_node.range)
+  if update_range == current_node.range
+    current_node.range_max = value
+    current_node.cache = value
+    return
+  end
+  update(
+    current_node.left,
+    current_node.left.range.first..update_range.last
+  )
+  update(
+    current_node.right,
+    update_range.first..current_node.right.range.last
+  )
+  current_node.range_max = [
+    current_node.left.range_max,
+    current_node.right.range_max
+  ].max
+end
+```
+The time complexity of the update operator is `O(log n)`
 
 ## Implementation (draft)
 * Could structure to fit into one array
