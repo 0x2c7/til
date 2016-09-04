@@ -65,7 +65,7 @@ The problem requirement is too find the maximum elments. Recall the some arithme
 ```
 Max(A, 3, 9) = Max(Max(A, 3, 6), Max(A, 7, 9))
 ```
-The range `7..9` doesn't change from the beginning to the end. We should cache that part and find just loop to find the maximum from `3..6`. That seems legit!  Split the entire array into two ranges, each range is splitted into smaller ranges and so on. Oh wait. Isn't that the concept of **binary tree**? Yup. We can solve the problem by setting up a special type of binary tree. Each node will manage a range `i..j`. In this context, it is reasonal to choose let two child ranges equal. So, left node manages `i..(i + j) / 2` and right node manages `(i + j) / 2 + 1 .. j`. This new kind of tree is called **Interval Tree** (usually ambiguous with its coursin **Segment Tree**, I'll discuss about this later). Obviously, the way array is splited into half leads to the fact that Interval Tree is a **balanced binary tree**.
+The range `7..9` doesn't change from the beginning to the end. We should cache that part and find just loop to find the maximum from `3..6`. That seems legit!  Split the entire array into two ranges, each range is splitted into smaller ranges and so on. Oh wait. Isn't that the concept of **binary tree**? Yup. We can solve the problem by setting up a special type of binary tree. Each node will manage a range `i..j`. In this context, it is reasonal to choose let two child ranges equal. So, left node manages `i..(i + j) / 2` and right node manages `(i + j) / 2 + 1 .. j`. This new kind of tree is called **Interval Tree** (usually ambiguous with its coursin **Segment Tree**, I'll discuss about this later). Obviously, the way array is splited into half leads to the fact that Interval Tree is a **balanced binary tree**. Each node has no children (leaf node) or two children (normal node).
 
 ### A little more abstraction
 In fact, when working with pure computer science problems, people realize there are many ones which could be categorized into the same class of this problem. For example: instead of finding min or max, we need to find the sum of a range in an array; or we need to find out how many elements in a range which are bigger than a number, etc.
@@ -77,15 +77,75 @@ Step back a little while and think of the similarities of mentioned problems, we
 
 Interval tree was born to solve this kind of problems efficiently. Although each problem could have better exclusive optimised solution, the Interval Tree is more abstract, reuseable and doesn't require further research time. Subsequently, if you don't need a specially strict solution for those problems, I think interval tree is great enough for most of the cases.
 
-### Problem solved (draft)
+### Problem solved
+
+#### Building the tree
 It's time to go back to our problem. From the array `A = [7, 9, 4, 3, 6, 2, 3, 5, 4, 0]`, we build the Interval Tree in which the root node is the whole array. Left node is the segment `[7, 9, 4, 3, 6]` and the right node is `[2, 3, 5, 4, 0]`. Apply the same rule for those nodes until we reach leaf node, which contains only one element. Beside the managed range, each node contains one more attribute called `Range Max`, which is the maximum element of the managed range. Initally, only the leaf node has range max value which is the only value of the managed range. Recursively building the tree from the root node to the leaf node, we got this tree:
 
 ![Interval Tree Building](./introduction-to-interval-tree/tree1.jpg)
+*Upper yellow part is the range that node manage and bottom green part is the range max*
 
+Obviously, we find the range max of non-leaf node easily by its two children: `node.range_max = Max(node.left.range_max, node.right.max_max)`. The tree building process could be subscribed by the following ruby code:
+```ruby
+def build(range)
+  node = Node.new(range: range)
+  if range.count == 1
+    node.range_max = A[range.first]
+    return node
+  end
+  mid = (range.count - 1) / 2
+  node.left = build(0..mid)
+  node.right = build((mid + 1)..(range.count - 1))
+  node.range_max = [node.left.range_max, node.right.range_max].max
+  return node
+end
+```
+Each node of an Interval Tree must have 0 children node (leaf node) or 2 children node (normal node). Subsequently, we don't have to be worried about out of range case of the building process. Using above algorithm, we got the whole tree:
 
+![Interval Tree Building Full](./introduction-to-interval-tree/tree2.jpg)
 
-* Kindly solve the problem with interval tree. Draw a lot of sketches to support
-  the idea
+#### Query operation
+To solve the query operation, for example: `Max(A, 3, 5)`, we follow the basic idea: starting with the root, if the node range match 100% with the query range, return the range max as the querying result, otherwise, continue to browse left and right node and return maximum values between left and right querying result. Go back to our current example, we illustrate it by the following figure. The red line is the query result we want to find. It starts at the beginning of the query range and ends at corresponding one.
+
+~[Interval Tree Query Operation](./introduction-to-interval-tree/tree-query1.jpg)
+
+At the root node, we only have the information of the range max from index 0 to 9. The query result `Q` we want to query is index 3 to 5. We could not conduct a right result from this information. Applying above idea, we need to find the query result `Q1` upon the left node and `Q2` upon the right node. Then, `Q = Max(Q1, Q2)`. Since the left node manage the range from 0 to 4, we only need to find `Q1` from 3 to 4. Similarly, we only need to find `Q2` from range index 5 to 5 upon the right node.
+
+~[Interval Tree Query Operation](./introduction-to-interval-tree/tree-query2.jpg)
+
+After spliting, we approach the result, but we are still not there yet. Continue spliting the range of `Q1` into `Q3` and `Q4`, and the range of `Q2` into `Q5` and `Q6`. The final result will be `Q = Max( Max(Q3, Q4), Max(Q5, Q6) )`.
+
+~[Interval Tree Query Operation](./introduction-to-interval-tree/tree-query3.jpg)
+
+Oh wait a minute! Some thing is wrong with `Q3`. The node contains `Q3` manages the range from index 0 to 3, while `Q1` is the result from ... index `3` to index `2`. Hm... I got it. The `Q1` is 100% belongs to the left child node of the node it belongs. So, we don't need to browse the right child node. The sam fact happens with `Q6`. Subsequently, `Q3` and `Q6` is redundant. Let's rename and change the fomula a little bit: `Q = Max( Max(Q3), Max(Q4) ) = Max(Q3, Q4)`
+
+~[Interval Tree Query Operation](./introduction-to-interval-tree/tree-query4.jpg)
+
+Finally, we got a 100% match. The `Q3` match 100% with its node. So, `Q3` is equal to the range max of its node. In this case, `Q3 = 6`, and `Q1 = Q3 = 6` too. We stop browsing `Q3`'s children nodes from now. In the oposite, `Q4` is still a mysterious, keep spliting deeper until we reach the 100% match, we got the full query tree. Obviously, `Q6 = 2`, `Q5 = 2`, `Q4 = 2` and `Q2 = 2`. Subsequently, `Q = Max(Q1, Q2) = Max(6, 2) = 6`. The full query operator is describe below:
+
+~[Interval Tree Query Operation](./introduction-to-interval-tree/tree-query5.jpg)
+
+You must be thinking that what the hell, the traditional loop cost only 3 steps. While this algorithm cost nearly at least 7 steps. Yeah, you are right. In micro queries, interval tree is slow comparing to traditional way. Usually, people overcome this weakness by applying traditional searching for micro queries (such as queries with the range under 10 for example) and apply interval-tree-way query for larger queries. If you try another example: `Max(0, 7)`, the interval tree is remarkable faster than traditional way:
+
+~[Interval Tree Query Operation](./introduction-to-interval-tree/tree-query6.jpg)
+
+Yup, 4 steps vs 8 steps. Interval Tree wins! The bigger the data is, the more the Interval Tree saves you. After the example, we can easily implement the query operation with following persuade code. To make our code simpler, instead of checking redundant browsing path, we check the out of range condition and return negative infinity if vilolated. It won't affect the result of `Max` operation.
+
+```(ruby)
+def query(current_node, query_range)
+  if query_range.last < current_node.range.first || query_range.first >
+  current_node.last
+    return -INFINITY
+  end
+  if query_range == current_node.range
+    return current_node.range_maxx
+  end
+  max_left = query(current_node.left, query_range.first..current_node.left.range.last)
+  max_right = query(current_node.right, current_node.right.range.first..query_range.last)
+  return [max_left, max_right].max
+end
+```
+
 * Raise the problem with updating operations: it still update all the elements
   => decrease the time complexity to `O(n*m)`. Quote the example above. Improve the solution by caching
   updating operation: updating go from top to bottom. If the updating range
@@ -103,11 +163,6 @@ It's time to go back to our problem. From the array `A = [7, 9, 4, 3, 6, 2, 3, 5
 ### 2D Interval Tree (draft)
 * Devide and conquer classic problem => Lead to 2D Interval Tree which has 4
   children and manage a 2D Reactangle instead of a range.
-
-### Implement Interval Tree with Ruby (draft)
-* Something need to be mentioned about implementation
-* Interval tree is balanced binary tree. So we can use an array to store instead
-  of real referenced structure. Just like heap
 
 ### Interval Tree vs Segment Tree (draft)
 * Segment Tree is the basic version of Interval Tree. Mainly used to count
