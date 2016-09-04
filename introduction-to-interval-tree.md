@@ -177,6 +177,7 @@ Max(A, 3, 9)
 ![Interval Tree Update Operation](./introduction-to-interval-tree/tree-update2.jpg)
 
 Wow, it is so complicated, especially the update operators. It costs half of all while there are only 2 operators! Research the tree, you will find something really interesting. Look at this section of the tree:
+
 ![Interval Tree Update Operation](./introduction-to-interval-tree/tree-update3.jpg)
 
 
@@ -192,7 +193,7 @@ With query operator `Max(A, 1, 4)` and `Max(A, 3, 9)`, we process like above nor
 
 ![Interval Tree full](./introduction-to-interval-tree/tree-update-full2.jpg)
 
-Let's add another example: `Update(A, 0, 7, 4); Max(A, 3, 9)`. The `Update(A, 0, 7, 4)` is processed just like above, nothing special.
+Let's add some more examples: `Update(A, 0, 7, 4); Max(A, 3, 9)`. The `Update(A, 0, 7, 4)` is processed just like above, nothing special.
 
 ![Interval Tree full](./introduction-to-interval-tree/tree-update-full3.jpg)
 
