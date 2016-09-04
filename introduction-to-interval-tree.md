@@ -140,8 +140,14 @@ def query(current_node, query_range)
   if query_range == current_node.range
     return current_node.range_maxx
   end
-  max_left = query(current_node.left, query_range.first..current_node.left.range.last)
-  max_right = query(current_node.right, current_node.right.range.first..query_range.last)
+  max_left = query(
+    current_node.left,
+    query_range.first..current_node.left.range.last
+  )
+  max_right = query(
+    current_node.right,
+    current_node.right.range.first..query_range.last
+  )
   return [max_left, max_right].max
 end
 ```
