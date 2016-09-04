@@ -131,7 +131,7 @@ You must be thinking that what the hell, the traditional loop cost only 3 steps.
 
 Yup, 4 steps vs 8 steps. Interval Tree wins! The bigger the data is, the more the Interval Tree saves you. After the example, we can easily implement the query operation with following persuade code. To make our code simpler, instead of checking redundant browsing path, we check the out of range condition and return negative infinity if vilolated. It won't affect the result of `Max` operation.
 
-```(ruby)
+```ruby
 def query(current_node, query_range)
   if query_range.last < current_node.range.first || query_range.first >
   current_node.last
