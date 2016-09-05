@@ -88,18 +88,18 @@ It's time to go back to our problem. From the array `A = [7, 9, 4, 3, 6, 2, 3, 5
 
 Obviously, we find the range max of non-leaf node easily by its two children: `node.range_max = Max(node.left.range_max, node.right.max_max)`. The tree building process could be subscribed by the following ruby code:
 ```ruby
-def build(range)
-  node = Node.new(range: range)
-  if range.count == 1
-    node.range_max = A[range.first]
-    return node
+  def build(range, array)
+    node = Node.new(range)
+    if range.count == 1
+      node.max = array[range.first]
+      return node
+    end
+    mid = (range.first + range.last) / 2
+    node.left = build(range.first..mid, array)
+    node.right = build((mid + 1)..range.last, array)
+    node.max = max(node.left.max, node.right.max)
+    node
   end
-  mid = (range.count - 1) / 2
-  node.left = build(0..mid)
-  node.right = build((mid + 1)..(range.count - 1))
-  node.range_max = [node.left.range_max, node.right.range_max].max
-  return node
-end
 ```
 Each node of an Interval Tree must have 0 children node (leaf node) or 2 children node (normal node). Subsequently, we don't have to be worried about out of range case of the building process. Using above algorithm, we got the whole tree:
 
@@ -135,27 +135,24 @@ You must be thinking that what the hell, the traditional loop cost only 3 steps.
 Yup, 4 steps vs 8 steps. Interval Tree wins! The bigger the data is, the more the Interval Tree saves you. After the example, we can easily implement the query operation with following persuade code. To make our code simpler, instead of checking redundant browsing path, we check the out of range condition and return negative infinity if vilolated. It won't affect the result of `Max` operation.
 
 ```ruby
-def query(current_node, query_range)
-  if out_of_range(query_range, current_node.range)
-    return -INFINITY
-  end
-  if query_range == current_node.range
-    return current_node.range_max
-  end
-  max_left = query(
-    current_node.left,
-    query_range.first..current_node.left.range.last
-  )
-  max_right = query(
-    current_node.right,
-    current_node.right.range.first..query_range.last
-  )
-  return [max_left, max_right].max
-end
+  def query(current_node, query_range)
+    if invalid_range?(query_range) || !current_node.belong_to?(query_range)
+      return -Float::INFINITY
+    end
 
-def out_of_range(query_range, node_range)
-  query_range.last < node_range.first || query_range.first > node_range.last
-end
+    return current_node.max if query_range == current_node.range
+
+    max_left = do_query(
+      current_node.left,
+      query_range.first..left_bound(query_range, current_node)
+    )
+    max_right = do_query(
+      current_node.right,
+      right_bound(query_range, current_node)..query_range.last
+    )
+
+    max(max_left, max_right)
+  end
 ```
 
 The time complexity of the query operator is `O(log n)`
@@ -208,37 +205,36 @@ The update cache is now useless because we want the inside result. So, we clear 
 Soon, we get the query result, which is `4`. This is the whole update query process we need :) This process could be described by the following persuade code:
 
 ```ruby
-def update(current_node, update_range, value)
-  return if out_of_range(current_node.range)
-  if update_range == current_node.range
-    current_node.range_max = value
-    current_node.cache = value
-    return
+  def update(current_node, update_range, value)
+    if invalid_range?(update_range) || !current_node.belong_to?(update_range)
+      return
+    end
+
+    if update_range == current_node.range
+      current_node.assign_cache(value)
+      return
+    end
+    current_node.migrate_cache
+
+    do_update(
+      current_node.left,
+      update_range.first..left_bound(update_range, current_node),
+      value
+    )
+    do_update(
+      current_node.right,
+      right_bound(update_range, current_node)..update_range.last,
+      value
+    )
+    current_node.max = max(
+      current_node.left.max,
+      current_node.right.max
+    )
   end
-  update(
-    current_node.left,
-    current_node.left.range.first..update_range.last
-  )
-  update(
-    current_node.right,
-    update_range.first..current_node.right.range.last
-  )
-  current_node.range_max = [
-    current_node.left.range_max,
-    current_node.right.range_max
-  ].max
-end
 ```
 The time complexity of the update operator is `O(log n)`
 
-## Implementation (draft)
-* Could structure to fit into one array
+## Implementation
+I implemented full problem with available source code at [Interval Tree implementation in ruby](./introduction-to-interval-tree/interval_tree.rb). Note: honestly, this code is for demonstration only because Ruby is not a good language for competitive programming. If you submit this source code to online judgement websites such as codeforces, it could not be compared to compiled static typed language like C++/Java.
 
-## Another problems (draft)
-* From abstraction part, raise problems with counting (LITES on SPOJ) and describe the solution
-* Real life example with calculate reactangle area problem (available on SPOJ)
-
-## Interval Tree vs Segment Tree (draft)
-* Segment Tree is the basic version of Interval Tree. Mainly used to count
-  things.
-
+Please give the feedbacks to improve more :) Special thanks.
