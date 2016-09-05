@@ -237,4 +237,4 @@ The time complexity of the update operator is `O(log n)`
 ## Implementation
 I implemented full problem with available source code at [Interval Tree implementation in ruby](./introduction-to-interval-tree/interval_tree.rb). Note: honestly, this code is for demonstration only because Ruby is not a good language for competitive programming. If you submit this source code to online judgement websites such as codeforces, it could not be compared to compiled static typed language like C++/Java.
 
-Please give the feedbacks to improve more :) Special thanks.
+If you find something wrong or want to discuss more about this. Please don't hesitate to leave a comment. I really appreciate for your feedbacks :)
