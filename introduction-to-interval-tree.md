@@ -237,4 +237,14 @@ The time complexity of the update operator is `O(log n)`
 ## Implementation
 I implemented full problem with available source code at [Interval Tree implementation in ruby](./introduction-to-interval-tree/interval_tree.rb). Note: honestly, this code is for demonstration only because Ruby is not a good language for competitive programming. If you submit this source code to online judgement websites such as codeforces, it could not be compared to compiled static typed language like C++/Java.
 
+Benchmark (array size = 50000, number of commands = 100000)
+```
+.................|user......|system......|total......|real
+Normal way.......|105.520000|0.430000....|105.950000.|(106.561576)
+IntervalTree.....|5.060000..|0.040000....|5.100000...|(5.154039)
+IntervalTree.....|4.860000..|0.190000....|5.050000...|(5.078880)
+with GC disabled
+```
+Yup. Interval Tree is 20 times faster than normal way. Fair enough right?
+
 If you find something wrong or want to discuss more about this. Please don't hesitate to leave a comment. I really appreciate for your feedbacks :)

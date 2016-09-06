@@ -126,14 +126,3 @@ class IntervalTree
     a > b ? a : b
   end
 end
-
-tree = IntervalTree.new(10, [7, 9, 4, 3, 6, 2, 3, 5, 4, 0])
-puts tree.query(3..5)
-tree.update(3..4, 10)
-puts tree.query(1..4)
-puts tree.query(3..9)
-tree.update(2..6, 1)
-puts tree.query(1..4)
-puts tree.query(3..9)
-tree.update(0..7, 4)
-puts tree.query(3..9)
