@@ -245,6 +245,16 @@ IntervalTree.....|5.060000..|0.040000....|5.100000...|(5.154039)
 IntervalTree.....|4.860000..|0.190000....|5.050000...|(5.078880)
 with GC disabled
 ```
-Yup. Interval Tree is 20 times faster than normal way. Fair enough right?
+Yup. Interval Tree is 20 times faster than normal way. Fair enough right? Let's try bigger test
+
+Benchmark (array size = 100000, number of commands = 500000)
+```
+.................|user......|system......|total......|real
+Normal way.......|1011.97000|2.580000....|1014.55000.|(1020.275318)
+IntervalTree.....|25.240000.|0.110000....|25.350000..|(25.506603)
+IntervalTree.....|26.59000..|0.860000....|27.450000..|(27.779953)
+with GC disabled
+```
+Now 40 times faster. Impressive! And perhaps GC disable doesn't help in decreasing the running time :D
 
 If you find something wrong or want to discuss more about this. Please don't hesitate to leave a comment. I really appreciate for your feedbacks :)
