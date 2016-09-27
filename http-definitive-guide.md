@@ -65,3 +65,113 @@ hexadecimal number of the ASCII code of the character want to escape. For
 example: `http://google.com/?query=toi%20yeu%20doi%20%7E` is the escaped string of
 url `http://goole.com?query=toi yeu doi~`. The list of restricted characters is
 listed at [https://tools.ietf.org/html/rfc3986#section-2](https://tools.ietf.org/html/rfc3986#section-2)
+
+## HTTP Messages
+In a HTTP transation, everything is packed into a message. The clients send
+request message to server, the server respones with response message. The
+messages are line-oriented, which means that all information in a message is
+structure by lines. When the clients / servers handle the message, it will parse
+the message line by line. Every message, both request and response includes three
+parts: start line, headers and body. Start line is the first line of the
+message. It describes the protocol, version, method ... to inform the opposite
+how to handle the message. The headers part contains useful information aside of
+the main content in boy. The header information is different between request and
+kresponse message. The header part could include many lines. Each line must store
+one header information only. The syntax of a header: `<name>: <content>`. To
+mark the end of headers, the message use a blank line (CRLF). Even when the
+message doesn't have header, the blank line must be included. The last part is
+body. It could be anything, from plain text, json, image to a top secret
+enscripted string.
+
+To view the raw HTTP message transported, I use `netcat` (`brew install netcat`).
+By using the netcat interactive command line, I could see the http messages when
+I try to connect to kipalog. That's fun that Kipalog response with 500 error
+intead of 405 =)).
+```
+▶ nc kipalog.com 80
+GET / HTTP/1.1
+Host: www.kipalog.com
+Accept: application/json
+
+HTTP/1.1 500 Internal Server Error
+Server: nginx
+Date: Tue, 27 Sep 2016 03:19:38 GMT
+Content-Type: text/html; charset=utf-8
+Content-Length: 0
+Connection: close
+Status: 500 Internal Server Error
+X-Request-Id: 4ffaa15a-3e42-4831-bc1e-aa1d5e5d788d
+X-Runtime: 0.010137
+```
+The lines on the top are the HTTP request response I compose:
+```
+GET / HTTP/1.1
+Host: www.kipalog.com
+Accept: application/json
+```
+It has a high readability since it is designed to be read by both machines and
+human. The above message means that I want to get the resource at location `/`
+(homepage) with HTTP protocol version 1.1 at host `www.kipalog.com` and I only
+accept the response with JSON format. This message is sent to the server of
+kipalog.com, then the server response with another message:
+```
+HTTP/1.1 500 Internal Server Error
+Server: nginx
+Date: Tue, 27 Sep 2016 03:19:38 GMT
+Content-Type: text/html; charset=utf-8
+Content-Length: 0
+Connection: close
+Status: 500 Internal Server Error
+X-Request-Id: 4ffaa15a-3e42-4831-bc1e-aa1d5e5d788d
+X-Runtime: 0.010137
+```
+In general, it says that `f*ck`, I have a bug when process the above message.
+And provide some information about that. In this case, both request and response
+messages don't have a body. Let's try another example
+```
+▶ nc google.com 80
+POST / HTTP/1.1
+Host: google.com
+
+HTTP/1.0 411 Length Required
+Content-Type: text/html; charset=UTF-8
+Content-Length: 1564
+Date: Tue, 27 Sep 2016 03:29:40 GMT
+
+<!DOCTYPE html>
+<html lang=en>
+  <meta charset=utf-8>
+  <meta name=viewport content="initial-scale=1, minimum-scale=1, width=device-width">
+  <title>Error 411 (Length Required)!!1</title>
+  <style>
+    *{margin:0;padding:0}html,code{font:15px/22px arial,sans-serif}html{background:#fff;color:#222;padding:15px}body{m
+argin:7% auto 0;max-width:390px;min-height:180px;padding:30px 0 15px}* > body{background:url(//www.google.com/images/e
+rrors/robot.png) 100% 5px no-repeat;padding-right:205px}p{margin:11px 0 22px;overflow:hidden}ins{color:#777;text-decor
+ation:none}a img{border:0}@media screen and (max-width:772px){body{background:none;margin-top:0;max-width:none;padding
+-right:0}}#logo{background:url(//www.google.com/images/branding/googlelogo/1x/googlelogo_color_150x54dp.png) no-repeat
+;margin-left:-5px}@media only screen and (min-resolution:192dpi){#logo{background:url(//www.google.com/images/branding
+/googlelogo/2x/googlelogo_color_150x54dp.png) no-repeat 0% 0%/100% 100%;-moz-border-image:url(//www.google.com/images/
+branding/googlelogo/2x/googlelogo_color_150x54dp.png) 0}}@media only screen and (-webkit-min-device-pixel-ratio:2){#lo
+go{background:url(//www.google.com/images/branding/googlelogo/2x/googlelogo_color_150x54dp.png) no-repeat;-webkit-back
+ground-size:100% 100%}}#logo{display:inline-block;height:54px;width:150px}
+  </style>
+  <a href=//www.google.com/><span id=logo aria-label=Google></span></a>
+  <p><b>411.</b> <ins>That’s an error.</ins>
+  <p>POST requests require a <code>Content-length</code> header.  <ins>That’s all we know.</ins>
+```
+
+By definition, the overall syntax of the request message:
+```
+<method> <request-URL> <version>
+<headers>
+
+<entity-body>
+```
+And the response message's syntax:
+```
+<version> <status> <reason-phrase>
+<headers>
+
+<entity-body>
+```
+(continue)
