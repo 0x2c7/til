@@ -35,10 +35,6 @@ def process(tree, commands)
   end
 end
 Benchmark.bm do |x|
-  x.report("Normal way") do
-    tree = NormalWay.new(size, array.dup)
-    process(tree, commands)
-  end
   x.report("IntervalTree") do
     tree = IntervalTree.new(size, array.dup)
     process(tree, commands)
@@ -46,6 +42,10 @@ Benchmark.bm do |x|
   x.report("IntervalTree with GC disabled") do
     GC.disable
     tree = IntervalTree.new(size, array.dup)
+    process(tree, commands)
+  end
+  x.report("Normal way") do
+    tree = NormalWay.new(size, array.dup)
     process(tree, commands)
   end
 end
