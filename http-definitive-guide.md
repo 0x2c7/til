@@ -307,5 +307,112 @@ what the TCP is and how it takes the main reponsibility in data transportation.
   multiple connections at once and each connection is persistent and could be
   used to send multiple requests. That decreases the loading time dramatically.
 
+## Web servers
+The interet world expands so big like today thanks to the apperance of web
+servers. There are countless web servers available on the world, from the old
+giant like Apache, Nginx to tiny web servers with some lines of codes. In
+general, all the web servers have the same mechanism: receive HTTP request,
+process it and sending back the response. The mechanism is simple, but how to
+implement it insdie is not simple. A good implemented web server is optimised at
+every step to serve thousand or million requests per hour. To determine how they
+could do that, let's look at how a request is handle when being sent to a web
+server.
+- 1. Accept client connections: this is actually the conneciton establishment
+     step, when a request is sent to the server, it must decide accept / decline
+     the request. Usually, this step is handled by the OS or low level system
+     that the web servers don't need to care much about except it wants to
+     optimize.
+
+- 2. Receving request: this step is important. This step decide how many
+     concurrencis the server could handle. The wolrd concurrency here means
+     the number of requests the server could receive and wait to server. It
+     doesn't mean the number of requests the server processed at once. Imagine
+     the server is like a restaurant, a request is like a customer. Whey they
+     order, the restaurant add their order to a queue to serve. At the time,
+     there could be hundreds of waiting guesses, while the restaurant could only
+     process some of the orders at once. The rest of them have to wait until
+     their turn. In fact, all the requests are queued into a connection list and
+     be served by the request time order.
+
+- 3. Request processing: from the connection list, the web server will decide
+     how to process the each request. If the request is to access a static
+     resource and the web server is built with that funciionality, it will
+     handle the resource accessing. In the most of the cases, the web servers
+     delegate request processing to request handler which is written in
+     different programming languages like PHP, Ruby, etc. The web server now
+     just takes part in the request distribution. Usually, the request handler
+     spawns multiple processes. The web server gonna a request is sent into
+     which processes. The request handlers could be placed in external servers.
+
+- 4. Sending response: the web servers takes the response from the request
+     handlers, then packs it up and send back to the requester
+
+- 5. Logging: Usually, after processed, the web servers gonna log everything
+     into log files.
+
+The above mechanism is just the most simple web servers. In real time, to
+archive a big amount of requests hanlded per second, the web server system is
+transformed into much more complicated form. I won't discuss it here (actually I
+don't know :smile:)
+
+## Caching
+In the internet world, data transportaion is a costly process, especially when
+the destination server is far far way from the source and the data size is huge.
+People when browsing the internet usally need to request the same URL times over
+times. It could be a logo of a website, a javascript files used everywhere in
+the page or even the whole about page. These resources don't change as regular
+as the user request frequency. That's why people come up with the idea to cache
+the unusually changed resources. It means that the resource is stored at the
+local storage, when the people request that resource again, the local version is
+used instead of requesting the resource from the remote destination. People
+implemented multiple levels of caching to increase the speed, from the client
+caching level (implemented in browsers) to caching proxy or even the CDN idea.
+All the cahcing mechanism must taken care of the freshness of the resource.
+Because it is meanless to use an outdated resource time over time. So, the
+cahcing engines have a good way to maintain the freshness of the resource.
+
+- The resource from the response should have an information to know how long the
+  resource keeps its freshness. It means that in that time, the cahcing engines
+  could response the document right away. Otherwise, it needs to request to the
+  server to fetch information. That value is set in the HTTP header:
+
+  - `Expires: Fri 04 Oct 2016, 05:00:00 GMT`: this is the convention of
+    `HTTP/1.0+`, it says that this recoure **could** be updated after this time.
+    This time has a flaw that if the client doesn't set the time right, the
+    expire period will be calculated late and cause outdated problem.
+
+  - `Cache-control: max-age=3600` or `Cache-control: s-maxage=3600`: it is the
+    convention of `HTTP/1.1`. The value here is `3600` here exposes that it will
+    exprire 3600s (1 hour) after the request time. The request time is set with
+    `Date` header in the response. By this convention, the clients don't need to
+    have a right time. It just needs to calculate based on the request `Date`
+    and the `maxage` value.
+
+- When the user request an expiered resource, the clients will request to the
+  server again. If the resource is still fresh, the server will response with
+  `304` header and blank body. The caching engines receive the response and
+  update `maxage`, `expires` and the `Date` of the stored request again.
+  Otherwised, the response contains full resource data. The caching engines will
+  delete the local stored document, put new resource and update the `expires`,
+  `maxage` and `Date` value again.
+
+- In some system, there exists cache servers and cache proxy. These are just the
+  middle servers standing between the clients and the destination. When a
+  request is sent, it hits the cahcing servers / proxies first, they will check
+  the freshness just like the above mechanism. If the cache doesn't exist, it is
+  sent to the next level caching server if exist. There could be level 2 or even level
+  3 cahce servers. The first levels store popular documents, the second stores
+  less popular ones and so on. In the mean time, the caching servers send
+  revalidaion request frequently to the destination to make ensure the freshness ratio in
+  the servers.
+
+- To measure the cahcing performance, people calculate `Cache hit ratio` and
+  `Cache byte hit ratio`. The `cache hit` ratio is the percent of cahce exists
+  over the total request. The perfect score is 1.0, means that 100% of the
+  requests are cached. In real time, the acceptable score is 0.4. If the
+  resource size diverses and the cache hit ratio doesn't reflect the right
+  value, people use `cahce byte hit ratio`. It will calculate based on the size
+  of the resource instead of the count.
+
 
 
