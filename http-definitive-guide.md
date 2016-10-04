@@ -174,4 +174,138 @@ And the response message's syntax:
 
 <entity-body>
 ```
-(continue)
+### Verion
+Version is used to determine which verion of HTTP the request / response need to
+be handled in. There are some popular HTTP versions: `1.0`, `1.1` and `2.0`.
+Version `2.0` is totally different and I won't talk about it here. Versino `1.0`
+and `1.1` is widely used and accepted by nearly all HTTP servers.
+
+### Method
+Method is at the start of the request line to specify which action the request
+want to execute on the servers. Their are plenty of methods supported widely:
+- `GET`: This is the most popular method. When using this method, the requester
+  want to fetch (download / view) a single resource on the server. Basically,
+  nothing will be changed on the server when the requester send this method.
+- `POST`: The default method that the HTML form use to send data to the server.
+  It means that the requester want to submit some data so that the server will
+  create new resources.
+- `PATCH` / `PUT`: Used to update a resource on the server. If the resource does
+  not exist, the server will create new one just like the `POST` method.
+- `DELETE`: the requester tries to delete something on the server.
+- `OPTIONS`: the requester wants to fetch the headers of the response only
+  instead of response the full resource. Usually used to check cache validation,
+  CORS checking before sent, get the size of lar source ....
+
+HTTP protocol encourage the clients and servers follow the above meanings the
+methods. However, it is likely that the clients and servers use a totally
+irrelative methods to their demands.
+
+### Status code
+The status code is a number that summaries the response result. Their are a lof
+of status code that we need to remember. They are categoried to 5 groups:
+- `1xx` status: information. This status category is usually for information
+  announcement. Widely used in HTTP client implementation. The normal web pages
+  don't require to use these status codes.
+- `2xx` status: used to announce that the request is successfully processed.
+  Some popular code is `200`, `201`, etc.
+- `3xx` status: redirection status category. Used to announce the clients that
+  there are some resource reallocations occur on the server and the client
+  should fetch the needed resource at another URL
+- `4xx` status: client fault. Used to announce the clients that they sent
+  something wrong to the server. Or the request doesn't have enough required
+  information. Or the request doesn't have a right access.
+- `5xx` status: Server fault. Used to describe some errors happened when process
+  the request.
+
+### Reason phrase
+When above status code is not enough to describe the response state, reason
+phrase is used to add up readable information about the response like `OK`,
+`Restricted' ...
+
+### Headers
+Headers are the most important elements of HTTP protocol. It helps in the
+resource identification like resource length, caching control, etc. You can even
+add your own HTTP headers without worry much about it. The headers could be
+splited into 5 types: `General headers`, `Request headers`, `Response headers`,
+`Entity headers` and `Extension headers`.
+
+## Connection management
+As mentioned far far above, the HTTP protocol is built on top of the TCP/IP. So,
+it depends crictically on TCP transportation protocol. Since HTTP specification
+is so simple, the time spent on processing HTTP layer only is just a small part
+of the whole processing time. Most of the time is spent on data connecting and
+transportation time, which belongs to TCP layer. So, we should have a look at
+what the TCP is and how it takes the main reponsibility in data transportation.
+
+- TCP is a reliable transportation protocol. After established, TCP will make
+  sure that all the data it takes responsibility to transfer is completed. The
+  word "completed" here means that it won't be damaged, lost, or modified
+  silently without the awareness of the owner. It follows the rule "All or
+  nothing". If a transported data is not completed due to any reason, it will be
+  destroyed and TCP will send another data to replace.
+
+- TCP depends on IP network protocol to send the data. It will split its data
+  into smaller parts called chunks, and packed each chunk into one IP packet,
+  then sent via the IP protocol. The TCP protocol doesn't take care of the real
+  transportation process itself. It only takes care of the sending distribution,
+  data integrity, fault handling, etc. We can imagine that IP protocol is the
+  truck that carries the rocks on the street. It can deliver to the right
+  address. Sometimes, it makes some rocks smashed, drop some rocks while moving,
+  or being forced to stop at the transportation control gateway and could not
+  continue its trip. TCP could be considered as the transportation provider. It
+  received rocks from the clients (HTTP), then it manages to split the rocks
+  into small parts that fit the truck size, guide the trucks to go to the right
+  address. If something wrong happens, it will decide whether send antoher truck
+  to fix the problem or cancel the whole contract and sorry the client (HTTP
+  gonna cries).
+
+- Each IP packet has a header that contains the information of its mission. 20
+  bytes is for IP information itself, 20 bytes is for HTTP information.
+
+- At the start of the TCP transporation, TCP establishes the connection to the
+  destination location. This establishment is called TCP connection handshake.
+  This could be considered as a gentle request "Hey, could I send some data to
+  you"? If the destination agrees with the request, it will prepare something to
+  be ready to receive the data and response "Okie dude, you could send now". In
+  the real time, TCP will first send a special packet with `SYN` flag the
+  destination. If the server is okay with the request, it sends a package with
+  `SYN + ACK` flag back to the sender. If the sender doesn't change it mind, it
+  will start to send the first data packet with a `ACK` flag to the
+  destiniation. Then, all the packets will be send sequentially. Finally, the
+  connection is closed and finish the transportation.
+
+- Each TCP connection is identified uniquely by four factors: `destination IP`,
+  `destination port`, `source IP`, `source port`. If an IP packet has the same 4
+  factors, it is considered to belong to the same TCP connection. That causes a
+  serious problem. In case connection A finished, then connection B is established
+  with the same 4 factors. If a packet of connection A arrives too late (due to connection
+  problem) after the B is established, it could be classified to belong to
+  connection B and makes the whole connection B wrong. To avoid this problem,
+  people use Delayed Acknowledgement Algorithm. It states that the destination
+  gonna wait about 100 - 200ms to make sure that all packets of A arrived, or
+  destoryed in the way. However, this algorithm decreases the performance of the
+  whole TCP protocol. So, in this modern day, because it is unlikely that the late
+  arrival gonna happen, people usually set `TIME_WAIT` to the most minimal value
+  as possible to prevent above case.
+
+- When loading a page, it is likely that there are hundreds connections need to
+  be request. Many of them are in the same servers. The traditional algorithm
+  that loads all the requests sequentially soon becomes super slow and need to
+  be replaced. So, on the modern day, the HTTP clients are implemented to send
+  multiple requests at once. The number of parallel connections is depend on the
+  HTTP clients, usually 8 - 16. That increases the performance, but still not
+  fast enough. People realize that a lot of time is spent for connection
+  establishment. They come up with the idea: how above using the same connection
+  for multiple requests. And they implement that idea with `Connection:
+  keep-alive` heaaders in `HTTP/1.0`. That works perfectly and decrease a lot of
+  processing time. So, in `HTTP/1.1`, which is the most popular HTTP version
+  right now, the default HTTP behaviour is to keep the connection alive except
+  the requester wants to close it right away. The servers gonna wait about 15s
+  from the last package received. After 15s and no packages sent, it will close
+  the connection. This mechanism is called persitent connection. Combining with
+  the above parallel connection management, right now, ech client establish
+  multiple connections at once and each connection is persistent and could be
+  used to send multiple requests. That decreases the loading time dramatically.
+
+
+
