@@ -1,4 +1,4 @@
-# Research gRPC
+# Introduction to gRPC
 ## Introduction
 - Microservice approach is mentioned every where at the moment. It is considered to be the exit for the Monolith applications. However, it is not for the beginner because when moving from the simple monolith application, you will meet a lot of other problems that need to solved. Those problems are not the business logic, but the technical side. One of them is how the services communicate with each other. I'm a beginner to the mirco service world. So, I'm having a little research as well as benchmarking so that I could learn and apply for the projects at the company if possible (yup company environment only, who needs microservice for a side project?). So let's begin.
 - When I mention about the communication between microservices, perhaps the first thing popping in your head is REST API. And yes, it is the most popular way implemented to be the standard for service communication. It has bunch of advantages. For example, it is really easy and familiar with any developer, or it is highly compatible, supported in any frameworks in any programming language. However, REST API is based on client-server model. It is perfectly fit for that purpose. In the microservice world, the communication we are talking about here is server-server communication. So, REST API exposes some significant flaws. It is One-way communication, one server is the requester, other one is the responser. The server could respond anything it wants and hope the client could parse it. It becomes a potential error, especially deeply nested object. The second thing is that when the data needed to be transfer becomes huge, REST API becomes costly. It is caused due to the serialization and deserialization process. The server must load all data, serialize it and send back to the client. If we paginate it, it is much more slower since everything under the transportation layer must to be set up from the beginning. No way to reuse these effort. In fact, there are some other flaws in the design of REST API that I could not mention here (actually, I have just recently think about these two only :p)
@@ -145,18 +145,18 @@ ActiveRecord::Base.logger = Logger.new(STDOUT)
 Microservices and gRPC is a new approach for my company to move the whole system to. The previous stack depends on Heroku. They provides many useful utilities that save us a lot of cost at the beginning. As the time flies, it is too hard for the expansion because Heroku provoked a lot of freedom. Subsequently, we are moving our infrastructure to AWS. At first, the new features are implemented in new services. Then, we gradually extract the modules in the main Monolith application into services. At the moment, we are just at the beginning step. So, Heroku application is still there for most requests. What we are setting up here is one RPC server to gather information from main app. It is actually in our AWS cluster. It connect to a replication of Heroku's database and totally isolated with the main application. Every other services call RPC requests to this RPC server. In the main Heroku application, it delegates stuff to services via RPC too. It is fortune that Heroku allows external RPC call. So everything is fine until now. And we got some interesting benchmarking.
 
 #### Services to Services
-Average request: 1.5 ms
-Median request: 1.2 ms
-Fasted request: 0.5 ms
-Slowest request: 7 ms
-95% request time: 4ms
+- Average request: 1.5 ms
+- Median request: 1.2 ms
+- Fasted request: 0.5 ms
+- Slowest request: 7 ms
+- 95% request time: 4ms
 
 #### Heroku main app to services
-Average request: 6.5 ms
-Median request: 7 ms
-Fasted request: 3 ms
-Slowest request: 20 ms
-95% request time: 7 ms
+- Average request: 6.5 ms
+- Median request: 7 ms
+- Fasted request: 3 ms
+- Slowest request: 20 ms
+- 95% request time: 7 ms
 
 The RPC calls from Heroku main app is slow because it is out of our control. We could not do anything about it. This result is acceptable for us. So, perhaps we'll follow RPC for production :)
 
