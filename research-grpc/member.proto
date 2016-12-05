@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+message MemberRequest {
+  int64 id = 1;
+}
+
+message MemberReply {
+  string name = 1;
+  string email = 2;
+}
+
+service MemberService {
+  rpc LoadMember ( MemberRequest ) returns ( MemberReply ) {}
+}
