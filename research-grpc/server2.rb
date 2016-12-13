@@ -10,8 +10,8 @@ module GRPC
   end
 end
 
-class ServiceHandler < MemberService::Service
-  def load_member(requests, _other = nil)
+class ServiceHandler < OrderService::Service
+  def load_order(requests, _other = nil)
     Enumerator.new do |yielder|
       requests.each do |request|
         puts "Request received: id = #{request.id}"
@@ -19,9 +19,8 @@ class ServiceHandler < MemberService::Service
         puts "Response with #{amount}"
         amount.times do |n|
           sleep(1)
-          yielder << MemberReply.new(
-            name: "Member #{n} of ##{request.id}",
-            email: "test#{n}-#{request.id}@gmail.com"
+          yielder << OrderReply.new(
+            number: "Order #{amount} - #{request.id} - #{rand(1..10000)}"
           )
         end
       end
@@ -30,6 +29,6 @@ class ServiceHandler < MemberService::Service
 end
 
 server = GRPC::RpcServer.new
-server.add_http2_port("localhost:50052", :this_port_is_insecure)
+server.add_http2_port("localhost:50053", :this_port_is_insecure)
 server.handle(ServiceHandler.new)
 server.run_till_terminated

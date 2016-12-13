@@ -11,7 +11,11 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :name, :string, 1
     optional :email, :string, 2
   end
+  add_message "OrderReply" do
+    optional :number, :string, 1
+  end
 end
 
 MemberRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("MemberRequest").msgclass
 MemberReply = Google::Protobuf::DescriptorPool.generated_pool.lookup("MemberReply").msgclass
+OrderReply = Google::Protobuf::DescriptorPool.generated_pool.lookup("OrderReply").msgclass

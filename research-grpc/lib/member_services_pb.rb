@@ -13,7 +13,21 @@ module MemberService
     self.unmarshal_class_method = :decode
     self.service_name = 'MemberService'
 
-    rpc :LoadMember, MemberRequest, MemberReply
+    rpc :LoadMember, stream(MemberRequest), stream(MemberReply)
+  end
+
+  Stub = Service.rpc_stub_class
+end
+module OrderService
+  class Service
+
+    include GRPC::GenericService
+
+    self.marshal_class_method = :encode
+    self.unmarshal_class_method = :decode
+    self.service_name = 'OrderService'
+
+    rpc :LoadOrder, stream(MemberRequest), stream(OrderReply)
   end
 
   Stub = Service.rpc_stub_class

@@ -161,13 +161,147 @@ Microservices and gRPC is a new approach for my company to move the whole system
 The RPC calls from Heroku main app is slow because it is out of our control. We could not do anything about it. This result is acceptable for us. So, perhaps we'll follow RPC for production :)
 
 ## Security with SSL
+GRPC provides some security machanisms. SSL approach is the one that I like most. Following the SSL machanism used widely in the server world, the GRPC server holds a pair of Private Key and Certificate (sometimes called public key) and the GRPC client hold the same Certificate too. At the beginning of the transportation process, the server sends a digital certificate which are the connection encrytion information encrypted with the Certificate. The client decrypts and verifies the server. Then, it generates a session key, encrypt with the certificate and sends back to the server. The server decrypts it with Private key and confirm the connection is secure. From now, all the data transported are encrypted with the session key. Unlike the normal SSL connection between browser and the web server, we don't need a middleman to verify the participants in the connection establishment since all the participants are internal services under our control. Therefore, we could generate the Private key and the Certificate ourselves with Self-Sign SSL.
+
+To start with, let's genereate the essential security stuffs for the secure connection:
+- The first command genereates the Private Key with the length 4096 bit and open for the later process.
+- The second command generates the Certificate baesd on the Private key. The Certifcate is created with a particular amount of time (10 years in the example) and some meta information.
+- The last command is to cencrypt the Private key for security reason.
+
+```bash
+openssl genrsa -passout pass:1111 -des3 -out server.key 4096
+openssl req -passin pass:1111 -new -x509 -days 3650 -key server.key -out server.crt -subj '/C=US/ST=NY/L=NYC/O=SomeCompany/CN=localhost/emailAddress=devops@somecompany.com'
+openssl rsa -passin pass:1111 -in server.key -out server.key
+```
+After creating two files (`server.key` and `server.crt1)`, we could start using it right now. In the GRPC Server, instead of using `:this_channel_is_insecure`, `GRPC` provides us `Credentials` classes to support this. In the server side, add this part into the code:
+
+```ruby
+  credentials = GRPC::Core::ServerCredentials.new(
+    nil,
+    [{
+      private_key: File.read('server.key'),
+      cert_chain: File.read('server.crt')
+    }],
+    true
+  )
+  server = GRPC::RpcServer.new
+  server.add_http2_port('0.0.0.0:50051', credentials)
+```
+
+In the client side, we need to configure the SSL too, add this code to the client:
+
+```ruby
+  credentials = GRPC::Core::Credentials.new(File.read('server.crt'))
+  client = FortuneService::Stub.new('127.0.0.1:50051', creds: credentials)
+```
+
+And done :D. Everything works like charm for now. If someone holds the host and the port the gRPC server, they could not access withou the Private key and Certificate.
 
 ## Streaming
+In almost offically supporting languages, gRPC supports the cool feature: Streaming. This features bring gRPC much further in the race with HTTP. The default behaviour of HTTP is response-request. Which means that we receive a complete request and then process it and response. This approach has some particular flaws. The most critical one is that it is super costly when the transported data is huge. It must load everything in the memory, serialize a huge data size and then send a huge bunch of file via the network. That huge data chunk must be deserialized, loaded everything into memory again. The requester must wait for a long time before actually receive it and it is costly to process that huge size of data at once. This could be fixed if we apply pagination, batching transporation, or even using HTTP streaming. However, it increases the unnecessary compexity of the whole service. By supporting gRPC out of the box, gRPC simplify the painful part of transportation process as well as decrease the processing time for both clinent and server.
 
-## Error handling
+gRPC supports three types of streaming:
+- Client streaming ( client sends a big amount of data to server via Streaming )
+- Server streaming ( server respones a big amount of data to client via streaming )
+- Bio streamingg ( clients sends a big amount of data to server via Streaming, server receives each item, process it and sends each response back in the response stream )
 
-## Protocol buffer versioning
+To identicate the streaming feature, we just need to add one word into the `proto` file:
+```proto
+  # Client streaming
+  rpc LoadMember ( stream MemberRequest ) returns ( MemberReply ) {}
+  # Server streaming
+  rpc LoadMember ( MemberRequest ) returns ( stream MemberReply ) {}
+  # Bio streaming
+  rpc LoadMember ( stream MemberRequest ) returns ( stream MemberReply ) {}
+```
+And that's it. So simple :). To add the straming support in Ruby, we apply Enumerable pattern when sending the data. In the client side, to send the streaming data, we wrap it with Enumarator instance:
+```ruby
+stub.load_member(
+  Enumerator.new do |yielder|
+    3.times do |n|
+      yielder << MemberRequest.new(id: n)
+    end
+  end
+)
+```
 
-## Dig into the gRPC source code
+Everything works like charm. In the server side, to sends the streaming data, we do the same things
 
+```ruby
+def load_member(request)
+  some_responses = CalculateResponse.call(request)
+  Enumerator.new do |yielder|
+    some_responses.each do |response|
+      yielder << MemberReply.new(response)
+    end
+  end
+end
+```
 
+In case bio-streaming is implemeneted, we just need this in the server side:
+
+```ruby
+  def load_member(requests, _other = nil)
+    Enumerator.new do |yielder|
+      requests.each do |request|
+        some_responses = CalculateResponse.call(request)
+        some_responses.each do |response|
+          yielder << MemberReply.new(response)
+        end
+      end
+    end
+  end
+```
+
+As you can see, everything is independent with each other. Therefore, we could apply parallel computing here to decrease the processing time:
+
+```ruby
+  def load_member(requests, _other = nil)
+    Enumerator.new do |yielder|
+      Parrallel.each(requests) do |request|
+        some_responses = CalculateResponse.call(request)
+        some_responses.each do |response|
+          yielder << MemberReply.new(response)
+        end
+      end
+    end
+  end
+```
+
+## Parrallel handling
+Typically, a service needs many data from different source. It trigger gRPC calls multiple times. Each call adds up the final response time of the request. It is a bad idea to let the grPC calls processed sequently. Thereforee, applying parallel calling is a good idea. In ruby, we could use `Parallel` gem for this job. It does a great things after all.
+
+```ruby
+stub = MemberService::Stub.new(
+  'localhost:50052',
+  :this_channel_is_insecure
+)
+
+stub2 = OrderService::Stub.new(
+  'localhost:50053',
+  :this_channel_is_insecure
+)
+
+enum = Enumerator.new do |yielder|
+  3.times do |n|
+    yielder << MemberRequest.new(id: n)
+  end
+end
+
+enum2 = Enumerator.new do |yielder|
+  3.times do |n|
+    yielder << MemberRequest.new(id: n)
+  end
+end
+
+results = Parallel.map(
+  [
+    [stub, :load_member, enum],
+    [stub2, :load_order, enum2]
+  ]
+) do |s, method, params|
+  result = s.send(method, params)
+  result.to_a.map(&:to_h)
+end
+```
+By using this, all the data are retrieved in parallel. After all data are fetched, it is composed into one single hash to use later.

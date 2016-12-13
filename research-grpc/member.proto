@@ -9,6 +9,14 @@ message MemberReply {
   string email = 2;
 }
 
+message OrderReply {
+  string number = 1;
+}
+
 service MemberService {
-  rpc LoadMember ( MemberRequest ) returns ( MemberReply ) {}
+  rpc LoadMember ( stream MemberRequest ) returns ( stream MemberReply ) {}
+}
+
+service OrderService {
+  rpc LoadOrder ( stream MemberRequest ) returns ( stream OrderReply ) {}
 }
